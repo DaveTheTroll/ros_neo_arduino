@@ -12,26 +12,42 @@
 CRGB leds[NUM_LEDS];
 
 ros::NodeHandle  nh;
+long lastUpdate;
 
-enum
-{
-  Static,
-  Clear,
-  Hazard
-} mode;
-long lastModeChange;
+uint8_t mode;
 
 void OnNeoMode( const ros_neo_arduino::NeoMode& msg)
 {
-  nh.loginfo("Neo Mode");
+  mode = msg.mode;
+  
+  switch(mode)
+  {
+    case ros_neo_arduino::NeoMode::CLEAR:
+      nh.loginfo("Neo Mode: CLEAR");
+      {
+        CRGB off = CRGB(0,0,0);
+        for(int i=0; i<NUM_LEDS; i++)
+        {
+          leds[i] = off;
+        }
+        FastLED.show();
+      }
+    break;
+    case ros_neo_arduino::NeoMode::STATIC:
+      nh.loginfo("Neo Mode: STATIC");
+      break;
+    case ros_neo_arduino::NeoMode::HAZARD:
+      nh.loginfo("Neo Mode: HAZARD");
+      break;
+  }
 }
 
 ros::Subscriber<ros_neo_arduino::NeoMode> sub("neo_mode", &OnNeoMode );
 
 void setup()
 {
-  mode = Hazard;
-  lastModeChange = millis();
+  mode = ros_neo_arduino::NeoMode::HAZARD;
+  lastUpdate = millis();
   
   pinMode(LED_BUILTIN, OUTPUT);
   
@@ -53,15 +69,15 @@ void checkMode()
 {
   switch(mode)
   {
-    case Hazard:
+    case ros_neo_arduino::NeoMode::HAZARD:
       {
         static bool on = false;
         long now = millis();
-        if (now - lastModeChange > 400)
+        if (now - lastUpdate > 400)
         {
-          lastModeChange = now;
+          lastUpdate = now;
           on = !on;
-          CRGB color = on ? CRGB(0, 255, 0) : CRGB(0,0,0);
+          CRGB color = on ? CRGB(255, 64, 0) : CRGB(0,0,0);
           for(int i = 0; i < 4; i++)
             for (int j = -2; j < 2; j++)
             {
