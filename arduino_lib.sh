@@ -1,4 +1,5 @@
 #!/bin/bash
 
 cd ~/Arduino/libraries
-rosrun rosserial_client make_library.py . ros_neo_arduino
+rm -rf ros_lib
+rosrun rosserial_arduino make_libraries.py .

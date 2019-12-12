@@ -3,6 +3,7 @@
 #include <ros.h>
 #include <FastLED.h>
 #include "ros_neo_arduino/NeoMode.h"
+#include "ros_neo_arduino/NeoLeds.h"
 
 #define LED_PIN     5
 #define COLOR_ORDER GRB
@@ -16,7 +17,9 @@ long lastUpdate;
 
 uint8_t mode;
 
-void OnNeoMode( const ros_neo_arduino::NeoMode& msg)
+char buf[32];
+
+void OnNeoMode(const ros_neo_arduino::NeoMode& msg)
 {
   mode = msg.mode;
   
@@ -42,7 +45,26 @@ void OnNeoMode( const ros_neo_arduino::NeoMode& msg)
   }
 }
 
-ros::Subscriber<ros_neo_arduino::NeoMode> sub("neo_mode", &OnNeoMode );
+void OnNeoLeds(const ros_neo_arduino::NeoLeds& msg)
+{
+  nh.loginfo("Neo LEDs");
+  mode = ros_neo_arduino::NeoMode::STATIC;
+
+  if (msg.index < NUM_LEDS)
+  {
+    leds[msg.index] = CRGB(msg.r, msg.g, msg.b);
+    FastLED.show();
+    sprintf(buf, "L:%d (%d,%d,%d)", (int)msg.index, (int)msg.r, (int)msg.g, (int)msg.b);
+    nh.loginfo(buf);
+  }
+  else
+  {
+    nh.loginfo("Neo LEDs: Out of range");
+  }
+}
+
+ros::Subscriber<ros_neo_arduino::NeoMode> subMods("neo_mode", &OnNeoMode );
+ros::Subscriber<ros_neo_arduino::NeoLeds> subLeds("neo_leds", &OnNeoLeds );
 
 void setup()
 {
@@ -55,7 +77,8 @@ void setup()
   FastLED.setBrightness( BRIGHTNESS );
   
   nh.initNode();
-  nh.subscribe(sub);
+  nh.subscribe(subMods);
+  nh.subscribe(subLeds);
 }
 
 void loop()
