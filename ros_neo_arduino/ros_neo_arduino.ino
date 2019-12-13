@@ -16,19 +16,23 @@ ros::NodeHandle  nh;
 long lastUpdate;
 
 uint8_t mode;
+uint32_t mode_param;
 
 char buf[32];
+
+const int corner_offset = 8;
+CRGB off = CRGB(0,0,0);
 
 void OnNeoMode(const ros_neo_arduino::NeoMode& msg)
 {
   mode = msg.mode;
+  mode_param = msg.param;
   
   switch(mode)
   {
     case ros_neo_arduino::NeoMode::CLEAR:
       nh.loginfo("Neo Mode: CLEAR");
       {
-        CRGB off = CRGB(0,0,0);
         for(int i=0; i<NUM_LEDS; i++)
         {
           leds[i] = off;
@@ -41,6 +45,9 @@ void OnNeoMode(const ros_neo_arduino::NeoMode& msg)
       break;
     case ros_neo_arduino::NeoMode::HAZARD:
       nh.loginfo("Neo Mode: HAZARD");
+      break;
+    case ros_neo_arduino::NeoMode::CHASE:
+      nh.loginfo("Neo Mode: CHASE");
       break;
   }
 }
@@ -100,13 +107,28 @@ void checkMode()
         {
           lastUpdate = now;
           on = !on;
-          CRGB color = on ? CRGB(255, 64, 255) : CRGB(0,0,0);
+          CRGB color = on ? CRGB(255, 64, 0) : CRGB(0,0,0);
           for(int i = 0; i < 4; i++)
             for (int j = -2; j < 2; j++)
             {
-              int k = ((NUM_LEDS * i / 4) + j + NUM_LEDS) % NUM_LEDS;
+              int k = ((NUM_LEDS * i / 4) + corner_offset + j + NUM_LEDS) % NUM_LEDS;
               leds[k] = color;
             }
+          FastLED.show();
+        }
+      }
+      break;
+    case ros_neo_arduino::NeoMode::CHASE:
+      {
+        static int pos = 0;
+        long now = millis();
+        if (now - lastUpdate > 20)
+        {
+          lastUpdate = now;
+          CRGB color = CRGB((mode_param >> 16) & 0xFF, (mode_param >> 8) & 0xFF, mode_param & 0xFF);
+          leds[pos] = color;
+          leds[(pos -3 + NUM_LEDS) % NUM_LEDS] = off;
+          pos = (pos+1) % NUM_LEDS;
           FastLED.show();
         }
       }
