@@ -100,7 +100,7 @@ void checkMode()
         {
           lastUpdate = now;
           on = !on;
-          CRGB color = on ? CRGB(255, 64, 0) : CRGB(0,0,0);
+          CRGB color = on ? CRGB(255, 64, 255) : CRGB(0,0,0);
           for(int i = 0; i < 4; i++)
             for (int j = -2; j < 2; j++)
             {
